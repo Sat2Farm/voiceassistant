@@ -1,0 +1,13 @@
+docarray
+streamlit>=1.27.0  # Upgrade Streamlit to a version compatible with newer protobuf
+langchain>=0.2.0   # Allow latest LangChain (which will pull compatible core, community etc.)
+langchain-core
+langchain-community
+langchain-google-genai # Let pip pick the latest compatible with langchain
+langchain-huggingface # Let pip pick the latest compatible with langchain
+python-dotenv
+pdfplumber
+sentence-transformers
+torch # Remove version pin, let sentence-transformers choose compatible version
+# protobuf # REMOVED: Let pip resolve protobuf to a newer version (4.x, 5.x, or 6.x)
+
