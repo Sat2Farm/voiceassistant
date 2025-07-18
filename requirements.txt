@@ -1,4 +1,5 @@
 portaudio19-dev
+python3-dev
 murf
 SpeechRecognition
 docarray
