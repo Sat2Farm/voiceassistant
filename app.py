@@ -1,3 +1,4 @@
+import asyncio
 import streamlit as st
 import os
 import pdfplumber
@@ -189,10 +190,10 @@ st.markdown(
         font-weight: 600;
     }
 
-     /* Sidebar styling */
-     .css-1d391kg {
-         background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
-     }
+      /* Sidebar styling */
+      .css-1d391kg {
+          background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+      }
 
     .css-1d391kg .css-1v0mbdj {
         color: green;
@@ -313,7 +314,7 @@ def extract_text_with_pdfplumber(pdf_path):
         return ""
 
 
-def initialize_vector_db(pdf_file, api_keys_list):  # Changed parameter name
+def initialize_vector_db(pdf_file, api_keys_list):
     """Initializes the vector store from PDF content, caching it."""
     if st.session_state.vector_store is None:
         loading_placeholder = st.empty()
@@ -354,10 +355,18 @@ def initialize_vector_db(pdf_file, api_keys_list):  # Changed parameter name
                 return False
 
             try:
+                # Ensure an event loop is available for GoogleGenerativeAIEmbeddings
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
                 st.session_state.embeddings = GoogleGenerativeAIEmbeddings(
                     model="models/embedding-001",
-                    google_api_key=random.choice(api_keys_list)  # Use the passed list
+                    google_api_key=random.choice(api_keys_list)
                 )
+                # A quick test to ensure embeddings work
                 _ = st.session_state.embeddings.embed_query("hello world")
             except Exception as e:
                 st.error(
@@ -462,7 +471,7 @@ def listen_for_voice_input(language_code="en-US"):
 
 contact_messages = {
     "English": "🤝 Let me connect you with our agricultural experts! Please contact support@satyukt.com or call 8970700045 | 7019992797 for specialized assistance.",
-    "हिंदी": "🤝 मैं आपको हमारे कृषि विशेषज्ञों से जोड़ता हूँ! विशेष सहायता के लिए कृपया support@satyukt.com पर संपर्क करें या 8970700045 | 7019992797 पर कॉल करें।",
+    "हिंदी": "🤝 मैं आपको हमारे कृषि विशेषज्ञों से जोड़ता हूं! विशेष सहायता के लिए कृपया support@satyukt.com पर संपर्क करें या 8970700045 | 7019992797 पर कॉल करें।",
     "ಕನ್ನಡ": "🤝 ನಮ್ಮ ಕೃಷಿ ತಜ್ಞರೊಂದಿಗೆ ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತೇನೆ! ವಿಶೇಷ ಸಹಾಯಕ್ಕಾಗಿ support@satyukt.com ಗೆ ಸಂಪರ್ಕಿಸಿ ಅಥವಾ 8970700045 | 7019992797 ಗೆ ಕರೆ ಮಾಡಿ.",
     "தமிழ்": "🤝 எங்கள் விவசாய நிபுணர்களுடன் உங்களை இணைக்கிறேன்! சிறப்பு உதவிக்கு support@satyukt.com ஐ தொடர்பு கொள்ளவும் அல்லது 8970700045 | 7019992797 ஐ அழைக்கவும்.",
     "తెలుగు": "🤝 మా వ్యవసాయ నిపుణులతో మిమ్మల్ని కనెక్ట్ చేస్తాను! ప్రత్యేక సహాయం కోసం దయచేసి support@satyukt.com ని సంప్రదించండి లేదా 8970700045 | 7019992797 కు కాల్ చేయండి。",
@@ -497,11 +506,11 @@ def is_out_of_context(answer, current_selected_lang):
 
 # Initialize the Gemini LLM (cached resource for efficiency)
 @st.cache_resource
-def get_llm(api_keys_list):  # Changed parameter name
+def get_llm(api_keys_list):
     return ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", google_api_key=random.choice(api_keys_list))
 
 
-llm = get_llm(google_api_keys)  # Corrected: Pass google_api_keys here
+llm = get_llm(google_api_keys)
 
 # --- Sidebar UI ---
 with st.sidebar:
@@ -741,7 +750,7 @@ if st.session_state.vector_store is not None:
         final_user_query = user_prompt_text_input.strip()
         if send_button_clicked or (user_prompt_text_input and st.session_state.get(
                 "last_text_input") != user_prompt_text_input and st.session_state.get("text_input_main_touched",
-                                                                                      False)):
+                                                                                       False)):
             st.session_state.last_text_input = user_prompt_text_input
             if final_user_query:
                 process_query_flag = True
@@ -770,7 +779,7 @@ if st.session_state.vector_store is not None:
         with st.spinner("🤖 Satyukt is thinking..."):
             retriever = st.session_state.vector_store.as_retriever()
             retrieval_chain = create_retrieval_chain(retriever,
-                                                     create_stuff_documents_chain(llm, ChatPromptTemplate.from_template("""
+                                                      create_stuff_documents_chain(llm, ChatPromptTemplate.from_template("""
                 You are a helpful AI assistant specialized in agriculture and Satyukt's services.
                 Answer the user's questions based only on the provided context.
                 If the answer is not in the context, politely state that you cannot provide information on that specific topic and suggest they contact support@satyukt.com or call 8970700045 | 7019992797 for specialized assistance.
@@ -815,5 +824,3 @@ if st.session_state.vector_store is not None:
 elif st.session_state.vector_store is None:
     st.info(
         "⬆️ Please ensure the 'SatyuktQueries.pdf' file is in the same directory as this script to enable the Virtual Assistant.")
-
-
