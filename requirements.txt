@@ -1,17 +1,39 @@
-portaudio19-dev
-python3-dev
-murf
-SpeechRecognition
-docarray
-streamlit>=1.27.0  # Upgrade Streamlit to a version compatible with newer protobuf
-langchain>=0.2.0   # Allow latest LangChain (which will pull compatible core, community etc.)
-langchain-core
-langchain-community
-langchain-google-genai # Let pip pick the latest compatible with langchain
-langchain-huggingface # Let pip pick the latest compatible with langchain
-python-dotenv
-pdfplumber
-sentence-transformers
-torch # Remove version pin, let sentence-transformers choose compatible version
-# protobuf # REMOVED: Let pip resolve protobuf to a newer version (4.x, 5.x, or 6.x)
-PyAudio
+# Core dependencies - fixed versions for compatibility
+streamlit==1.39.0
+python-dotenv==1.0.1
+
+# AI and ML dependencies - compatible versions
+langchain==0.2.16
+langchain-core==0.2.38
+langchain-community==0.2.16
+langchain-google-genai==1.0.10
+sentence-transformers==2.7.0
+
+# PDF processing
+pdfplumber==0.11.4
+
+# Speech recognition
+SpeechRecognition==3.10.4
+PyAudio==0.2.14
+
+# Text-to-speech
+murf==1.0.0
+
+# HTTP requests
+requests==2.32.3
+
+# Core ML dependencies
+torch==2.3.1
+numpy==1.24.4
+pandas==2.0.3
+
+# Vector store - use FAISS instead of DocArray for better compatibility
+faiss-cpu==1.8.0
+chromadb==0.4.24
+
+# Protobuf - fixed version for compatibility
+protobuf==4.25.4
+
+# Additional utilities
+aiofiles==23.2.1
+typing-extensions==4.12.2
