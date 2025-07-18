@@ -12,4 +12,4 @@ pdfplumber
 sentence-transformers
 torch # Remove version pin, let sentence-transformers choose compatible version
 # protobuf # REMOVED: Let pip resolve protobuf to a newer version (4.x, 5.x, or 6.x)
-
+PyAudio
