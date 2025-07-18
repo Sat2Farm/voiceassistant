@@ -1,5 +1,4 @@
 import streamlit as st
-import SpeechRecognition
 import os
 import pdfplumber
 import tempfile
