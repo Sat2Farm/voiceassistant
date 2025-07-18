@@ -1,4 +1,4 @@
-import asyncio
+# import asyncio
 import streamlit as st
 import os
 import pdfplumber
