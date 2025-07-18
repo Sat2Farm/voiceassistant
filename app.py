@@ -264,7 +264,7 @@ def get_speech_recognizer():
         try:
             with sr.Microphone() as source:
                 recognizer.adjust_for_ambient_noise(source, duration=1)
-            st.success("Microphone ready!")
+            # st.success("Microphone ready!") # Removed to avoid persistent message
         except OSError:
             st.warning("No microphone detected. Voice input will be disabled.")
             return None
@@ -299,7 +299,7 @@ murf_voice_ids = {
 }
 
 murf_multi_native_locales = {
-    "English": None,
+    "English": None, # English typically doesn't need multi_native_locale
     "हिंदी": "hi-IN",
     "ಕನ್ನಡ": "kn-IN",
     "தமிழ்": "ta-IN",
@@ -342,9 +342,12 @@ def initialize_vector_db(pdf_file, api_keys_list):
 
         pdf_path = None
         try:
-            if hasattr(pdf_file, 'read'):
-                file_content_bytes = pdf_file.read().getvalue()
-            else:
+            # Handle both BytesIO (from st.file_uploader) and file-like objects
+            if isinstance(pdf_file, io.BytesIO):
+                file_content_bytes = pdf_file.getvalue()
+            elif hasattr(pdf_file, 'read'): # Generic file-like object
+                file_content_bytes = pdf_file.read()
+            else: # Assuming it's a path or similar if not BytesIO/file-like
                 with open(pdf_file.path, 'rb') as f:
                     file_content_bytes = f.read()
             
@@ -377,10 +380,10 @@ def initialize_vector_db(pdf_file, api_keys_list):
                     google_api_key=random.choice(api_keys_list)
                 )
                 
-                # Test embeddings
+                # Test embeddings to catch API key issues early
                 _ = st.session_state.embeddings.embed_query("test")
                 
-                # Use FAISS instead of DocArrayInMemorySearch
+                # Use FAISS
                 st.session_state.vector_store = FAISS.from_documents(
                     chunks, st.session_state.embeddings
                 )
@@ -403,7 +406,7 @@ def initialize_vector_db(pdf_file, api_keys_list):
 def generate_audio_bytes_murf(text, language="English"):
     """Generate audio bytes for text using Murf AI API."""
     if not murf_api_key or not MURF_AVAILABLE:
-        st.warning("Murf AI API key is not set or library not available. Cannot generate audio.")
+        # st.warning("Murf AI API key is not set or library not available. Cannot generate audio.") # Already warned
         return None
     if not text.strip():
         return None
@@ -443,7 +446,7 @@ def listen_for_voice_input(language_code="en-US"):
     try:
         with sr.Microphone() as source:
             st.info("🎤 Listening... Please speak clearly.")
-            st.session_state.tts_audio_bytes = None
+            st.session_state.tts_audio_bytes = None # Clear previous audio
             audio = recognizer.listen(source, timeout=8, phrase_time_limit=10)
             text = recognizer.recognize_google(audio, language=language_code)
             return text
@@ -479,7 +482,7 @@ def is_out_of_context(answer, current_selected_lang):
         "i'm sorry", "i don't know", "not sure", "out of context",
         "invalid", "no mention", "cannot", "unable", "not available",
         "जानकारी उपलब्ध नहीं", "मुझे नहीं पता", "संदर्भ में नहीं",
-        "ಮಾಹಿತಿ ಲಭ್ಯವಿಲ್ಲ", "ನನಗೆ ಗೊತ್ತಿಲ್ಲ",
+        "माहिती उपलब्ध नाही", "नನಗೆ ಗೊತ್ತಿಲ್ಲ", "ನನಗೆ ಗೊತ್ತಿಲ್ಲ",
         "தகவல் இல்லை", "எனக்குத் தெரியாது",
         "సమాచారం అందుబాటులో లేదు", "నాకు తెలియదు",
         "তথ্য উপলব্ধ নয়", "আমি জানি না",
@@ -487,7 +490,13 @@ def is_out_of_context(answer, current_selected_lang):
         "માહિતી ઉપલબ્ધ નથી", "મને ખબર નથી",
         "ਜਾਣਕਾਰੀ ਉਪਲਬਧ ਨਹੀਂ", "ਮੈਨੂੰ ਨਹੀਂ ਪਤਾ"
     ]
-    return any(k in answer.lower() for k in keywords)
+    # Check if the answer contains any of the keywords
+    for keyword in keywords:
+        if keyword in answer.lower():
+            return True
+            
+    return False
+
 
 # Initialize the Gemini LLM
 @st.cache_resource
@@ -610,11 +619,9 @@ with col4:
         unsafe_allow_html=True
     )
 
----
-
-### **Chat Interface**
-
----
+st.markdown("---") # Fix: Wrapped in st.markdown()
+st.markdown("### **Chat Interface**") # Fix: Wrapped in st.markdown()
+st.markdown("---") # Fix: Wrapped in st.markdown()
 
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
@@ -655,18 +662,22 @@ elif st.session_state.input_method == "voice":
     if st.button("Start Voice Input 🎤", key="voice_start_button"):
         st.session_state.is_listening = True
         st.session_state.voice_input_text = "" # Clear previous voice input
+        st.rerun() # Rerun to show "Listening..." immediately
+
     if st.session_state.is_listening:
-        voice_placeholder.info("Listening... Speak now.")
-        recognized_text = listen_for_voice_input(sr_lang_codes[selected_lang])
-        voice_placeholder.empty()
-        if recognized_text:
-            st.session_state.voice_input_text = recognized_text
-            st.session_state.is_listening = False
-            st.success(f"Recognized: {recognized_text}")
-        else:
-            st.session_state.is_listening = False
-            st.warning("Voice input failed or no speech detected.")
-    user_query = st.session_state.voice_input_text
+        with voice_placeholder.container():
+            st.info("Listening... Speak now.")
+            recognized_text = listen_for_voice_input(sr_lang_codes[selected_lang])
+            if recognized_text:
+                st.session_state.voice_input_text = recognized_text
+                st.success(f"Recognized: {recognized_text}")
+            else:
+                st.warning("Voice input failed or no speech detected.")
+            st.session_state.is_listening = False # Stop listening after attempt
+            st.rerun() # Rerun to update input field and hide "Listening..."
+
+    user_query = st.text_input("Your Voice Input (edit if needed):", value=st.session_state.voice_input_text, key="voice_text_display")
+    
     # Clear voice input after use, but allow it to be displayed
     if st.button("Clear Voice Input", key="clear_voice_button"):
         st.session_state.voice_input_text = ""
@@ -675,7 +686,7 @@ elif st.session_state.input_method == "voice":
 
 # Process user query
 if (st.session_state.input_method == "text" and user_query) or \
-   (st.session_state.input_method == "voice" and st.session_state.voice_input_text and st.button("Submit Voice Query", key="submit_voice_button")):
+   (st.session_state.input_method == "voice" and st.session_state.voice_input_text and st.button("Submit Query", key="submit_button_for_voice")): # Changed button key
     
     # Add user message to chat history
     st.session_state.chat_history.append({"role": "user", "parts": user_query})
@@ -735,4 +746,4 @@ if (st.session_state.input_method == "text" and user_query) or \
     finally:
         thinking_placeholder.empty()
         st.session_state.voice_input_text = "" # Clear voice input after processing
-        st.rerun() # Rerun to update the chat display
+        st.rerun() # Rerun to update the chat display and clear input fields
