@@ -1,4 +1,5 @@
 import streamlit as st
+import SpeechRecognition
 import os
 import pdfplumber
 import tempfile
@@ -7,6 +8,7 @@ import io
 import requests
 import speech_recognition as sr
 import time
+
 
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
