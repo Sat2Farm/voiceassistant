@@ -1,3 +1,5 @@
+pip install SpeechRecognition
+
 docarray
 streamlit>=1.27.0  # Upgrade Streamlit to a version compatible with newer protobuf
 langchain>=0.2.0   # Allow latest LangChain (which will pull compatible core, community etc.)
