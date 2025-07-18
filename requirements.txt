@@ -1,3 +1,4 @@
+murf
 SpeechRecognition
 docarray
 streamlit>=1.27.0  # Upgrade Streamlit to a version compatible with newer protobuf
